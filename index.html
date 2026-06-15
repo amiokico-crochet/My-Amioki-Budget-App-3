@@ -481,22 +481,30 @@
 <script>
   const RATES = {
     Ashley: [
-      { name: 'Chickens',                   labor: 5.42, materials: 1.43, total: 6.85 },
-      { name: 'Baby Chicks',                labor: 3.68, materials: 0.78, total: 4.46 },
-      { name: 'Octopi (Juicy Couture)',      labor: 4.98, materials: 0.55, total: 5.53 },
-      { name: 'Octopi (Bernat Blanket)',     labor: 4.98, materials: 1.28, total: 6.26 },
-      { name: 'Octopi (Skinny Chenille)',    labor: 4.98, materials: 0.25, total: 5.23 },
-      { name: 'Mama Possum',                labor: 5.85, materials: 1.14, total: 6.99 },
-      { name: 'Baby Possum',                labor: 5.85, materials: 0.87, total: 6.72 },
-      { name: 'Heart Keychain',             labor: 0.65, materials: 0.11, total: 0.76 },
-      { name: 'Bear Coasters',              labor: 2.38, materials: 0.17, total: 2.55 },
-      { name: 'Cherry Blossom Pouch',       labor: 9.75, materials: 0.34, total: 10.09 },
-      { name: 'Apple Coasters',             labor: 3.68, materials: 0.19, total: 3.87 },
-      { name: 'Pet Rock',                   labor: 1.95, materials: 0.53, total: 2.48 },
-      { name: 'Mini Loaf Cat',              labor: 3.25, materials: 0.79, total: 4.04 },
-      { name: 'Mini Loaf Cat (Yarn Given)', labor: 3.25, materials: 0.09, total: 3.34 },
-      { name: 'Christmas Baby Chick',       labor: 7.15, materials: 1.65, total: 8.80 },
-      { name: 'Baby Christmas Tree',        labor: 8.88, materials: 1.85, total: 10.73 },
+      { name: 'Chicken (Orange)',                labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Chicken (White)',                 labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Chicken (Salt & Pepper)',         labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Chicken (Tweed Fall)',            labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Chicken (Tweed Winter)',          labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Baby Chicks',                     labor: 3.68, materials: 0.78, total: 4.46 },
+      { name: 'Octopi (Juicy Couture)',          labor: 4.98, materials: 0.55, total: 5.53 },
+      { name: 'Octopi (Bernat Blanket)',         labor: 4.98, materials: 1.28, total: 6.26 },
+      { name: 'Octopi (Skinny Chenille)',        labor: 4.98, materials: 0.25, total: 5.23 },
+      { name: 'Mama Possum',                     labor: 5.85, materials: 1.14, total: 6.99 },
+      { name: 'Baby Possum (Smol)',              labor: 5.85, materials: 0.80, total: 6.65 },
+      { name: 'Heart Keychain',                  labor: 0.65, materials: 0.11, total: 0.76 },
+      { name: 'Bear Coasters',                   labor: 2.38, materials: 0.17, total: 2.55 },
+      { name: 'Cherry Blossom Pouch',            labor: 9.75, materials: 0.34, total: 10.09 },
+      { name: 'Cherry Blossom Coaster',          labor: 4.12, materials: 0.21, total: 4.33 },
+      { name: 'Apple Coasters',                  labor: 3.68, materials: 0.19, total: 3.87 },
+      { name: 'Pet Rock',                        labor: 1.95, materials: 0.53, total: 2.48 },
+      { name: 'Pet Rock (With Googly Eyes)',     labor: 1.95, materials: 0.60, total: 2.55 },
+      { name: 'Mini Loaf Cat',                   labor: 3.25, materials: 0.79, total: 4.04 },
+      { name: 'Mini Loaf Cat (Yarn Given)',      labor: 3.25, materials: 0.09, total: 3.34 },
+      { name: 'Christmas Baby Chick',            labor: 7.15, materials: 1.65, total: 8.80 },
+      { name: 'Baby Christmas Tree',             labor: 8.88, materials: 1.85, total: 10.73 },
+      { name: 'Mini Bee',                        labor: 3.90, materials: 0.89, total: 4.79 },
+      { name: 'Mini Bee (with Heart Keychain)',  labor: 3.90, materials: 1.10, total: 5.00 },
     ],
     Liz: [
       { name: 'Leggy Frog',          labor: 4.33, materials: 0.35, total: 4.68 },
@@ -506,8 +514,10 @@
       { name: 'All Birb Designs',    labor: 5.42, materials: 0.42, total: 5.84 },
     ],
     Sydni: [
-      { name: 'Turtle',         labor: 7.80, materials: 0.06, total: 7.86 },
-      { name: 'Flower Coaster', labor: 4.98, materials: 0.00, total: 4.98 },
+      { name: 'Turtle',              labor: 7.87, materials: 0.06, total: 7.93 },
+      { name: 'Flower Coaster',      labor: 4.91, materials: 0.00, total: 4.91 },
+      { name: 'Axolotl Keychain',    labor: 4.77, materials: 0.02, total: 4.79 },
+      { name: 'Whale (Class Yarn)',  labor: 7.66, materials: 0.18, total: 7.84 },
     ]
   };
 
@@ -667,35 +677,111 @@
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: function(h) { return h.trim().replace(/^\uFEFF/, ''); },
+      transform: function(v) { return v.trim(); },
       complete: function(results) {
         const rows = results.data;
         document.getElementById('itemsBody').innerHTML = '';
         activeRows = [];
         let matched = 0;
 
+        const firstRow = rows[0] || {};
+        const headers  = Object.keys(firstRow);
+        const itemCol  = headers.find(function(h){ return /item.?name/i.test(h) || h.toLowerCase()==='item'; }) || 'Item Name';
+        const skuCol   = headers.find(function(h){ return /sku/i.test(h); }) || 'SKU';
+        const qtyCol   = headers.find(function(h){ return /items.?sold/i.test(h)||/units.?sold/i.test(h)||/^qty$/i.test(h); }) || 'Items Sold';
+        const grossCol = headers.find(function(h){ return /gross.?sales/i.test(h); }) || 'Gross Sales';
+
+        const SKU_TO_RATE = {
+          'CA-OCHICK':    { ctr: 'Ashley', item: 'Chicken (Orange)' },
+          'CA-WCHICK':    { ctr: 'Ashley', item: 'Chicken (White)' },
+          'CA-TFCHICK':   { ctr: 'Ashley', item: 'Chicken (Tweed Fall)' },
+          'CA-BABYCHICK': { ctr: 'Ashley', item: 'Baby Chicks' },
+          'CA-OCTO':      { ctr: 'Ashley', item: 'Octopi (Skinny Chenille)' },
+          'CA-MAMAOCTO':  { ctr: 'Ashley', item: 'Octopi (Bernat Blanket)' },
+          'CA-HEARTKEY':  { ctr: 'Ashley', item: 'Heart Keychain' },
+          'CA-COASTER':   { ctr: 'Ashley', item: 'Cherry Blossom Coaster' },
+          'CA-MINICAT':   { ctr: 'Ashley', item: 'Mini Loaf Cat' },
+          'CA-POSSUM':    { ctr: 'Ashley', item: 'Mama Possum' },
+          'CA-BPOSSUM':   { ctr: 'Ashley', item: 'Baby Possum (Smol)' },
+          'CL-PHROG':     { ctr: 'Liz',    item: 'Leggy Frog' },
+          'CL-CHONKYBEE': { ctr: 'Liz',    item: 'Bees' },
+          'CL-MINIBEE':   { ctr: 'Liz',    item: 'Bees' },
+          'CL-LEMJELLY':  { ctr: 'Liz',    item: 'Jellyfish' },
+          'CL-RPJELLY':   { ctr: 'Liz',    item: 'Jellyfish' },
+          'CL-BIRB':      { ctr: 'Liz',    item: 'All Birb Designs' },
+          'CL-RAINBIRB':  { ctr: 'Liz',    item: 'Pastel Rainbow Birb' },
+          'CS-TURTLE':    { ctr: 'Sydni',  item: 'Turtle' },
+          'CS-FLOWER':    { ctr: 'Sydni',  item: 'Flower Coaster' },
+        };
+
+        const NAME_TO_RATE = {
+          'chicken (orange)':           { ctr: 'Ashley', item: 'Chicken (Orange)' },
+          'chicken (white)':            { ctr: 'Ashley', item: 'Chicken (White)' },
+          'chicken (tweed fall)':       { ctr: 'Ashley', item: 'Chicken (Tweed Fall)' },
+          'chicken (tweed winter)':     { ctr: 'Ashley', item: 'Chicken (Tweed Winter)' },
+          'chicken (salt & pepper)':    { ctr: 'Ashley', item: 'Chicken (Salt & Pepper)' },
+          'baby chicks':                { ctr: 'Ashley', item: 'Baby Chicks' },
+          'claw machine (baby octopi)': { ctr: 'Ashley', item: 'Octopi (Skinny Chenille)' },
+          'mama octopi':                { ctr: 'Ashley', item: 'Octopi (Bernat Blanket)' },
+          'heart keychain':             { ctr: 'Ashley', item: 'Heart Keychain' },
+          'cherry blossom coaster':     { ctr: 'Ashley', item: 'Cherry Blossom Coaster' },
+          'mini loaf cat':              { ctr: 'Ashley', item: 'Mini Loaf Cat' },
+          'chonky loaf cat':            { ctr: 'Ashley', item: 'Mini Loaf Cat' },
+          'possums (mama)':             { ctr: 'Ashley', item: 'Mama Possum' },
+          'possums (baby)':             { ctr: 'Ashley', item: 'Baby Possum (Smol)' },
+          'mini bee':                   { ctr: 'Ashley', item: 'Mini Bee' },
+          'mini bee keychain':          { ctr: 'Liz',    item: 'Bees' },
+          'leggy frog':                 { ctr: 'Liz',    item: 'Leggy Frog' },
+          'jellyfish (lemonade)':       { ctr: 'Liz',    item: 'Jellyfish' },
+          'jellyfish (royal purple)':   { ctr: 'Liz',    item: 'Jellyfish' },
+          'chonky bee':                 { ctr: 'Liz',    item: 'Bees' },
+          'axolotl keychain':           { ctr: 'Sydni',  item: 'Axolotl Keychain' },
+          'flower bouquet':             { ctr: 'Sydni',  item: 'Flower Coaster' },
+          'turtle':                     { ctr: 'Sydni',  item: 'Turtle' },
+        };
+
+        const unmatched = [];
+
         rows.forEach(row => {
-          const itemName = (row['Item'] || row['item'] || row['Name'] || row['name'] || '').trim();
-          const qty      = parseInt(row['Qty'] || row['qty'] || row['Quantity'] || row['Units Sold'] || 0);
-          const grossAmt = parseFloat(row['Gross Sales'] || row['gross_sales'] || row['Price'] || 0);
+          const itemName = (row[itemCol] || '').trim();
+          const sku      = (row[skuCol] || '').trim().toUpperCase();
+          const qty      = parseInt(row[qtyCol] || 0);
+          const grossAmt = parseFloat((row[grossCol] || '0').replace(/[$,]/g, ''));
           const priceEa  = qty > 0 ? (grossAmt / qty).toFixed(2) : '';
           if (!itemName || qty < 1) return;
 
           let matchedCtr = null, matchedItem = null;
-          for (const [ctr, items] of Object.entries(RATES)) {
-            const found = items.find(i =>
-              i.name.toLowerCase() === itemName.toLowerCase() ||
-              itemName.toLowerCase().includes(i.name.toLowerCase().split(' ')[0])
-            );
-            if (found) { matchedCtr = ctr; matchedItem = found.name; break; }
+
+          for (const [prefix, map] of Object.entries(SKU_TO_RATE)) {
+            if (sku.startsWith(prefix)) { matchedCtr = map.ctr; matchedItem = map.item; break; }
+          }
+
+          if (!matchedCtr) {
+            const nameKey = itemName.toLowerCase().replace(/[^a-z0-9 &()]/g, '').trim();
+            const nameMatch = NAME_TO_RATE[nameKey];
+            if (nameMatch) { matchedCtr = nameMatch.ctr; matchedItem = nameMatch.item; }
+          }
+
+          if (!matchedCtr) {
+            const skuPrefix = sku.split('-').slice(0,1).join('-');
+            if (skuPrefix === 'CA') { matchedCtr = 'Ashley'; matchedItem = 'Chickens'; }
+            else if (skuPrefix === 'CL') { matchedCtr = 'Liz'; matchedItem = 'Leggy Frog'; }
+            else if (skuPrefix === 'CS') { matchedCtr = 'Sydni'; matchedItem = 'Turtle'; }
           }
 
           if (matchedCtr) {
             addItemRow(matchedCtr, matchedItem, qty, priceEa);
             matched++;
+          } else if (!sku.startsWith('AMI') && !sku.startsWith('SHOP') && itemName !== 'Custom Amount' && !itemName.includes('Cloud Puffs') && !itemName.includes('Sticker') && !itemName.includes('Stitch')) {
+            unmatched.push(itemName);
           }
         });
 
-        statusEl.innerHTML = `<div class="status-msg status-ok">✓ Found ${matched} contractor item${matched !== 1 ? 's' : ''} — review below</div>`;
+        const unmatchedNote = unmatched.length
+          ? `<div class="status-msg status-info" style="margin-top:6px;">⚠️ Couldn't auto-match: <strong>${unmatched.join(', ')}</strong> — add manually below if contractor-made.</div>`
+          : '';
+        statusEl.innerHTML = `<div class="status-msg status-ok">✓ Found ${matched} contractor item${matched !== 1 ? 's' : ''} — review below</div>${unmatchedNote}`;
         recalc();
       },
       error: function() {
@@ -776,6 +862,12 @@
       btn.disabled = false;
       btn.textContent = '🌸 Log to Google Sheets';
     }
+  }
+
+  const savedUrl = localStorage.getItem("amioki_gas_url");
+  if (savedUrl) {
+    document.getElementById("gasUrl").value = savedUrl;
+    document.getElementById("gasStatus").innerHTML = "<div class=\"status-msg status-ok\">✓ GAS URL loaded from last session.<\/div>";
   }
 
   addItemRow();

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amioki Sales Logger 🌸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:        #E91E63;
+      --pink-light:  #FCE4EC;
+      --pink-mid:    #F48FB1;
+      --pink-deep:   #AD1457;
+      --mint:        #1D9E75;
+      --mint-light:  #E1F5EE;
+      --lav:         #7B5EA7;
+      --lav-light:   #EDE7F6;
+      --amber:       #B45309;
+      --amber-light: #FEF3C7;
+      --coral:       #C2410C;
+      --coral-light: #FFF1ED;
+      --gray:        #6B7280;
+      --gray-light:  #F9FAFB;
+      --border:      #E5E7EB;
+      --text:        #111827;
+      --text-mid:    #374151;
+      --text-soft:   #6B7280;
+      --white:       #FFFFFF;
+      --bg:          #FFF5F9;
+      --radius-sm:   8px;
+      --radius-md:   12px;
+      --radius-lg:   18px;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 4rem;
+    }
+
+    header {
+      background: var(--white);
+      border-bottom: 2px solid var(--pink-light);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo-dot {
+      width: 36px; height: 36px;
+      background: var(--pink);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--pink);
+      letter-spacing: -0.01em;
+    }
+
+    .logo-sub {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      margin-top: 1px;
+    }
+
+    .main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.25rem;
+    }
+
+    .card-title {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-soft);
+      margin-bottom: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-title svg { flex-shrink: 0; }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--pink);
+    }
+
+    .field-row { display: grid; gap: 10px; }
+    .field-row.two   { grid-template-columns: 1fr 1fr; }
+    .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    .upload-zone {
+      border: 2px dashed var(--pink-mid);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: block;
+    }
+    .upload-zone:hover { background: var(--pink-light); }
+    .upload-zone input { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 6px; }
+    .upload-title { font-weight: 700; font-size: 0.9rem; color: var(--pink-deep); }
+    .upload-sub   { font-size: 0.75rem; color: var(--text-soft); margin-top: 3px; }
+
+    .status-msg {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+    }
+    .status-ok   { background: var(--mint-light);  color: var(--mint);  }
+    .status-err  { background: var(--coral-light); color: var(--coral); }
+    .status-info { background: var(--lav-light);   color: var(--lav);   }
+
+    .gas-row { display: flex; gap: 8px; align-items: flex-end; }
+    .gas-row input { flex: 1; }
+    .test-btn {
+      padding: 9px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .test-btn:hover { background: var(--gray-light); }
+
+    .item-table { width: 100%; border-collapse: collapse; }
+    .item-table th {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      text-align: left;
+      padding: 0 4px 6px;
+    }
+    .item-table td { padding: 3px 4px; vertical-align: bottom; }
+    .item-table td:last-child { width: 36px; text-align: center; }
+
+    .remove-btn {
+      width: 32px; height: 32px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      cursor: pointer;
+      color: var(--text-soft);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.1s;
+    }
+    .remove-btn:hover { background: var(--coral-light); color: var(--coral); border-color: var(--coral); }
+
+    .piece-preview {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      padding: 4px 8px;
+      background: var(--gray-light);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      border: 1px solid var(--border);
+      border-top: none;
+      margin-bottom: 4px;
+      display: none;
+    }
+    .piece-preview .your-cut { color: var(--mint); font-weight: 700; }
+
+    .add-item-btn {
+      width: 100%;
+      padding: 9px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-sm);
+      background: none;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .add-item-btn:hover { background: var(--gray-light); border-color: var(--pink-mid); color: var(--pink); }
+
+    .waterfall { display: flex; flex-direction: column; gap: 5px; }
+    .wf-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .wf-pos     { background: var(--mint-light);  color: var(--mint);   }
+    .wf-neg     { background: var(--coral-light); color: var(--coral);  }
+    .wf-neutral { background: var(--amber-light); color: var(--amber);  }
+    .wf-total   { background: var(--pink-light);  color: var(--pink-deep); border: 2px solid var(--pink-mid); font-size: 1rem; }
+    .wf-label   { font-weight: 700; }
+    .wf-val     { font-weight: 900; }
+
+    .pf-section { margin-top: 1.25rem; }
+    .pf-label-row { font-size: 0.75rem; font-weight: 700; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .pf-bar { margin-bottom: 10px; }
+    .pf-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .pf-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .pf-pct  { font-size: 0.75rem; color: var(--text-soft); margin-left: 4px; }
+    .pf-amt  { font-size: 0.95rem; font-weight: 900; color: var(--pink-deep); }
+    .pf-track { height: 7px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .pf-fill  { height: 7px; border-radius: 99px; }
+
+    .tax-reserve-card {
+      background: var(--amber-light);
+      border: 2px solid #FCD34D;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tax-reserve-label { font-size: 0.82rem; font-weight: 700; color: var(--amber); }
+    .tax-reserve-sub   { font-size: 0.72rem; color: var(--amber); margin-top: 2px; }
+    .tax-reserve-val   { font-family: 'Nunito', sans-serif; font-size: 1.6rem; font-weight: 900; color: var(--amber); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--pink);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .submit-btn:hover   { background: var(--pink-deep); }
+    .submit-btn:active  { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .tag {
+      display: inline-block;
+      background: var(--pink-light);
+      color: var(--pink-deep);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1.5px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    #resultsSection { display: none; }
+
+    @media (max-width: 500px) {
+      .field-row.three { grid-template-columns: 1fr 1fr; }
+      .item-table th:nth-child(4),
+      .item-table td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot">🌸</div>
+  <div>
+    <div class="logo-text">Amioki Sales Logger</div>
+    <div class="logo-sub">Profit First · Contractor Splits · Google Sheets</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- GAS CONNECTION -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      Google Sheets connection
+    </div>
+    <label>GAS web app URL <span class="tag">paste after deploying</span></label>
+    <div class="gas-row">
+      <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/..." />
+      <button class="test-btn" onclick="testGAS()">Test →</button>
+    </div>
+    <div id="gasStatus"></div>
+  </div>
+
+  <!-- CSV UPLOAD -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Square items CSV
+    </div>
+    <label class="upload-zone" for="csvUpload">
+      <input type="file" id="csvUpload" accept=".csv" onchange="handleCSV(this)" />
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Upload Square Items CSV</div>
+      <div class="upload-sub">Square Dashboard → Reports → Items → Export as CSV</div>
+    </label>
+    <div id="csvStatus"></div>
+  </div>
+
+  <!-- EVENT DETAILS -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Event details
+    </div>
+    <div class="field-row two" style="margin-bottom:10px;">
+      <div>
+        <label>Event name</label>
+        <input type="text" id="eventName" placeholder="VB Farmers Market" />
+      </div>
+      <div>
+        <label>Sales period</label>
+        <input type="text" id="period" placeholder="June 1, 2026" />
+      </div>
+    </div>
+    <div class="field-row three" style="margin-bottom:10px;">
+      <div>
+        <label>Gross sales ($)</label>
+        <input type="number" id="gross" placeholder="517.98" step="0.01" oninput="recalc()" />
+      </div>
+      <div>
+        <label>Square fees ($)</label>
+        <input type="number" id="fees" placeholder="16.37" step="0.01" oninput="recalc()" />
+      </div>
+      <div>
+        <label>VA tax collected ($)</label>
+        <input type="number" id="taxColl" placeholder="29.22" step="0.01" oninput="recalc()" />
+      </div>
+    </div>
+    <div>
+      <label>Booth fee ($) <span class="tag">if any</span></label>
+      <input type="number" id="boothFee" placeholder="0.00" step="0.01" oninput="recalc()" />
+    </div>
+  </div>
+
+  <!-- CONTRACTOR ITEMS -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+      Items sold by contractor
+    </div>
+    <table class="item-table">
+      <thead>
+        <tr>
+          <th>Contractor</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Sale price ea.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+    <button class="add-item-btn" onclick="addItemRow()">+ Add item</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsSection">
+
+    <div class="tax-reserve-card">
+      <div>
+        <div class="tax-reserve-label">⚠️ Square Savings — move this now</div>
+        <div class="tax-reserve-sub">22% tax reserve on gross sales</div>
+      </div>
+      <div class="tax-reserve-val" id="taxReserveDisplay">$0.00</div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        Where your money goes
+      </div>
+      <div class="waterfall" id="waterfall"></div>
+
+      <hr class="divider" />
+
+      <div class="pf-section">
+        <div class="pf-label-row">Profit First split — on true spendable</div>
+        <div id="pfBars"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NOTES + SUBMIT -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Log to Google Sheets
+    </div>
+    <div style="margin-bottom:12px;">
+      <label>Notes <span class="tag">optional</span></label>
+      <input type="text" id="notes" placeholder="Great weather, sold out of chickens..." />
+    </div>
+    <button class="submit-btn" onclick="submitLog()">🌸 Log to Google Sheets</button>
+    <div id="submitStatus"></div>
+  </div>
+
+</main>
+
+<script>
+  const RATES = {
+    Ashley: [
+      { name: 'Chickens',                   labor: 5.42, materials: 1.43, total: 6.85 },
+      { name: 'Baby Chicks',                labor: 3.68, materials: 0.78, total: 4.46 },
+      { name: 'Octopi (Juicy Couture)',      labor: 4.98, materials: 0.55, total: 5.53 },
+      { name: 'Octopi (Bernat Blanket)',     labor: 4.98, materials: 1.28, total: 6.26 },
+      { name: 'Octopi (Skinny Chenille)',    labor: 4.98, materials: 0.25, total: 5.23 },
+      { name: 'Mama Possum',                labor: 5.85, materials: 1.14, total: 6.99 },
+      { name: 'Baby Possum',                labor: 5.85, materials: 0.87, total: 6.72 },
+      { name: 'Heart Keychain',             labor: 0.65, materials: 0.11, total: 0.76 },
+      { name: 'Bear Coasters',              labor: 2.38, materials: 0.17, total: 2.55 },
+      { name: 'Cherry Blossom Pouch',       labor: 9.75, materials: 0.34, total: 10.09 },
+      { name: 'Apple Coasters',             labor: 3.68, materials: 0.19, total: 3.87 },
+      { name: 'Pet Rock',                   labor: 1.95, materials: 0.53, total: 2.48 },
+      { name: 'Mini Loaf Cat',              labor: 3.25, materials: 0.79, total: 4.04 },
+      { name: 'Mini Loaf Cat (Yarn Given)', labor: 3.25, materials: 0.09, total: 3.34 },
+      { name: 'Christmas Baby Chick',       labor: 7.15, materials: 1.65, total: 8.80 },
+      { name: 'Baby Christmas Tree',        labor: 8.88, materials: 1.85, total: 10.73 },
+    ],
+    Liz: [
+      { name: 'Leggy Frog',          labor: 4.33, materials: 0.35, total: 4.68 },
+      { name: 'Bees',                labor: 5.42, materials: 2.06, total: 7.48 },
+      { name: 'Pastel Rainbow Birb', labor: 5.42, materials: 1.00, total: 6.42 },
+      { name: 'Jellyfish',           labor: 5.42, materials: 0.33, total: 5.75 },
+      { name: 'All Birb Designs',    labor: 5.42, materials: 0.42, total: 5.84 },
+    ],
+    Sydni: [
+      { name: 'Turtle',         labor: 7.80, materials: 0.06, total: 7.86 },
+      { name: 'Flower Coaster', labor: 4.98, materials: 0.00, total: 4.98 },
+    ]
+  };
+
+  const PF = [
+    { label: 'Tithe',      pct: 0.10, color: '#7B5EA7' },
+    { label: 'Personal',   pct: 0.06, color: '#E91E63' },
+    { label: 'Operations', pct: 0.74, color: '#1D9E75' },
+    { label: 'Innovation', pct: 0.10, color: '#B45309' },
+  ];
+
+  let rowId = 0;
+  let activeRows = [];
+
+  function n(v) { return parseFloat(v) || 0; }
+  function fmt(v) { return '$' + Math.abs(v).toFixed(2); }
+
+  function addItemRow(contractor = '', itemName = '', qty = '', price = '') {
+    const id = rowId++;
+    activeRows.push(id);
+    const tbody = document.getElementById('itemsBody');
+
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + id;
+
+    const itemOpts = contractor && RATES[contractor]
+      ? RATES[contractor].map(r => `<option value="${r.name}" ${r.name === itemName ? 'selected' : ''}>${r.name}</option>`).join('')
+      : '<option value="">— pick contractor first —</option>';
+
+    tr.innerHTML = `
+      <td>
+        <select id="ctr-${id}" onchange="onCtrChange(${id})">
+          <option value="">—</option>
+          <option value="Ashley" ${contractor==='Ashley'?'selected':''}>Ashley</option>
+          <option value="Liz"    ${contractor==='Liz'?'selected':''}>Liz</option>
+          <option value="Sydni"  ${contractor==='Sydni'?'selected':''}>Sydni</option>
+        </select>
+      </td>
+      <td>
+        <select id="item-${id}" onchange="recalc()">
+          ${itemOpts}
+        </select>
+      </td>
+      <td><input type="number" id="qty-${id}" min="1" placeholder="1" value="${qty}" oninput="recalc()" /></td>
+      <td><input type="number" id="price-${id}" step="0.01" placeholder="25.00" value="${price}" oninput="recalc()" /></td>
+      <td><button class="remove-btn" onclick="removeRow(${id})" title="Remove">×</button></td>
+    `;
+
+    const previewTr = document.createElement('tr');
+    previewTr.id = 'preview-row-' + id;
+    previewTr.innerHTML = `<td colspan="5"><div class="piece-preview" id="preview-${id}"></div></td>`;
+
+    tbody.appendChild(tr);
+    tbody.appendChild(previewTr);
+    recalc();
+  }
+
+  function onCtrChange(id) {
+    const ctr = document.getElementById('ctr-' + id).value;
+    const sel = document.getElementById('item-' + id);
+    sel.innerHTML = ctr && RATES[ctr]
+      ? '<option value="">— pick item —</option>' + RATES[ctr].map(r => `<option value="${r.name}">${r.name}</option>`).join('')
+      : '<option value="">— pick contractor first —</option>';
+    recalc();
+  }
+
+  function removeRow(id) {
+    activeRows = activeRows.filter(r => r !== id);
+    document.getElementById('row-' + id)?.remove();
+    document.getElementById('preview-row-' + id)?.remove();
+    recalc();
+  }
+
+  function recalc() {
+    const gross    = n(document.getElementById('gross').value);
+    const fees     = n(document.getElementById('fees').value);
+    const taxColl  = n(document.getElementById('taxColl').value);
+    const boothFee = n(document.getElementById('boothFee').value);
+
+    let ashleyTotal = 0, lizTotal = 0, sydniTotal = 0;
+
+    activeRows.forEach(id => {
+      const ctr      = document.getElementById('ctr-' + id)?.value;
+      const itemName = document.getElementById('item-' + id)?.value;
+      const qty      = n(document.getElementById('qty-' + id)?.value);
+      const price    = n(document.getElementById('price-' + id)?.value);
+      const preview  = document.getElementById('preview-' + id);
+
+      if (!ctr || !itemName || !RATES[ctr]) { if (preview) preview.style.display = 'none'; return; }
+      const rate = RATES[ctr].find(r => r.name === itemName);
+      if (!rate) { if (preview) preview.style.display = 'none'; return; }
+
+      const deducted  = qty * rate.total;
+      const grossItem = qty * price;
+      const yourCut   = grossItem - deducted;
+
+      if (ctr === 'Ashley') ashleyTotal += deducted;
+      if (ctr === 'Liz')    lizTotal    += deducted;
+      if (ctr === 'Sydni')  sydniTotal  += deducted;
+
+      if (preview) {
+        preview.style.display = 'block';
+        preview.innerHTML = qty > 0
+          ? `Piece rate $${rate.total.toFixed(2)}/ea &nbsp;(labor $${rate.labor.toFixed(2)} + materials $${rate.materials.toFixed(2)}) &nbsp;·&nbsp; Total deducted: <strong>$${deducted.toFixed(2)}</strong>${price > 0 ? ` &nbsp;·&nbsp; Your cut: <span class="your-cut">$${yourCut.toFixed(2)}</span>` : ''}`
+          : `Piece rate $${rate.total.toFixed(2)}/ea &nbsp;(labor $${rate.labor.toFixed(2)} + materials $${rate.materials.toFixed(2)})`;
+      }
+    });
+
+    const totalContractor = ashleyTotal + lizTotal + sydniTotal;
+    const taxReserve      = gross * 0.22;
+    const trueSpendable   = gross - fees - taxColl - boothFee - totalContractor;
+    const pfBase          = Math.max(0, trueSpendable);
+
+    if (!gross) { document.getElementById('resultsSection').style.display = 'none'; return; }
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('taxReserveDisplay').textContent = fmt(taxReserve);
+
+    const wfRows = [
+      { label: 'Gross sales',                val: gross,            cls: 'wf-pos'     },
+      { label: '− Square fees',              val: -fees,            cls: 'wf-neg'     },
+      { label: '− VA sales tax (to state)',  val: -taxColl,         cls: 'wf-neutral' },
+      boothFee     ? { label: '− Booth fee',           val: -boothFee,     cls: 'wf-neg' } : null,
+      ashleyTotal  ? { label: '− Ashley piece rates',  val: -ashleyTotal,  cls: 'wf-neg' } : null,
+      lizTotal     ? { label: '− Liz piece rates',     val: -lizTotal,     cls: 'wf-neg' } : null,
+      sydniTotal   ? { label: '− Sydni piece rates',   val: -sydniTotal,   cls: 'wf-neg' } : null,
+    ].filter(Boolean);
+
+    document.getElementById('waterfall').innerHTML =
+      wfRows.map(r => `
+        <div class="wf-row ${r.cls}">
+          <div class="wf-label">${r.label}</div>
+          <div class="wf-val">${r.val >= 0 ? '' : '−'}${fmt(r.val)}</div>
+        </div>
+      `).join('') +
+      `<div class="wf-row wf-total">
+        <div class="wf-label">= True spendable 🩷</div>
+        <div class="wf-val">${fmt(trueSpendable)}</div>
+      </div>`;
+
+    document.getElementById('pfBars').innerHTML = PF.map(b => {
+      const amt = pfBase * b.pct;
+      return `<div class="pf-bar">
+        <div class="pf-top">
+          <div><span class="pf-name">${b.label}</span><span class="pf-pct">${(b.pct * 100).toFixed(0)}%</span></div>
+          <div class="pf-amt">${fmt(amt)}</div>
+        </div>
+        <div class="pf-track"><div class="pf-fill" style="width:${b.pct * 100}%; background:${b.color};"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  function handleCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('csvStatus');
+    statusEl.innerHTML = '<div class="status-msg status-info">Reading CSV...</div>';
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const rows = results.data;
+        document.getElementById('itemsBody').innerHTML = '';
+        activeRows = [];
+        let matched = 0;
+
+        rows.forEach(row => {
+          const itemName = (row['Item'] || row['item'] || row['Name'] || row['name'] || '').trim();
+          const qty      = parseInt(row['Qty'] || row['qty'] || row['Quantity'] || row['Units Sold'] || 0);
+          const grossAmt = parseFloat(row['Gross Sales'] || row['gross_sales'] || row['Price'] || 0);
+          const priceEa  = qty > 0 ? (grossAmt / qty).toFixed(2) : '';
+          if (!itemName || qty < 1) return;
+
+          let matchedCtr = null, matchedItem = null;
+          for (const [ctr, items] of Object.entries(RATES)) {
+            const found = items.find(i =>
+              i.name.toLowerCase() === itemName.toLowerCase() ||
+              itemName.toLowerCase().includes(i.name.toLowerCase().split(' ')[0])
+            );
+            if (found) { matchedCtr = ctr; matchedItem = found.name; break; }
+          }
+
+          if (matchedCtr) {
+            addItemRow(matchedCtr, matchedItem, qty, priceEa);
+            matched++;
+          }
+        });
+
+        statusEl.innerHTML = `<div class="status-msg status-ok">✓ Found ${matched} contractor item${matched !== 1 ? 's' : ''} — review below</div>`;
+        recalc();
+      },
+      error: function() {
+        statusEl.innerHTML = '<div class="status-msg status-err">Could not read CSV. Try a fresh export from Square.</div>';
+      }
+    });
+  }
+
+  async function testGAS() {
+    const url = document.getElementById('gasUrl').value.trim();
+    const el  = document.getElementById('gasStatus');
+    if (!url) { el.innerHTML = '<div class="status-msg status-err">Paste your GAS URL first.</div>'; return; }
+    el.innerHTML = '<div class="status-msg status-info">Testing...</div>';
+    try {
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
+      el.innerHTML = '<div class="status-msg status-ok">✓ Connected — GAS URL looks good!</div>';
+    } catch(e) {
+      el.innerHTML = '<div class="status-msg status-err">Could not reach that URL. Check your deployment settings.</div>';
+    }
+  }
+
+  async function submitLog() {
+    const url   = document.getElementById('gasUrl').value.trim();
+    const gross = n(document.getElementById('gross').value);
+    const status = document.getElementById('submitStatus');
+
+    if (!url)   { status.innerHTML = '<div class="status-msg status-err">Add your GAS URL above first.</div>'; return; }
+    if (!gross) { status.innerHTML = '<div class="status-msg status-err">Enter gross sales before logging.</div>'; return; }
+
+    const fees     = n(document.getElementById('fees').value);
+    const taxColl  = n(document.getElementById('taxColl').value);
+    const boothFee = n(document.getElementById('boothFee').value);
+
+    const items = [];
+    activeRows.forEach(id => {
+      const ctr      = document.getElementById('ctr-' + id)?.value;
+      const itemName = document.getElementById('item-' + id)?.value;
+      const qty      = n(document.getElementById('qty-' + id)?.value);
+      const price    = n(document.getElementById('price-' + id)?.value);
+      if (!ctr || !itemName || qty < 1) return;
+      const rate = RATES[ctr]?.find(r => r.name === itemName);
+      if (!rate) return;
+      items.push({
+        contractor: ctr, itemName, qty,
+        salePriceEach:       price,
+        pieceRateLabor:      rate.labor,
+        pieceRateMaterials:  rate.materials,
+        pieceRateTotal:      rate.total
+      });
+    });
+
+    const payload = {
+      eventName:    document.getElementById('eventName').value.trim(),
+      period:       document.getElementById('period').value.trim(),
+      gross, fees,
+      taxCollected: taxColl,
+      boothFee,
+      notes:        document.getElementById('notes').value.trim(),
+      items
+    };
+
+    const btn = document.querySelector('.submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Logging...';
+    status.innerHTML = '<div class="status-msg status-info">Sending to Google Sheets...</div>';
+
+    try {
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      status.innerHTML = '<div class="status-msg status-ok">✓ Logged to Google Sheets!</div>';
+    } catch(e) {
+      status.innerHTML = '<div class="status-msg status-err">Could not reach Google Sheets. Check your GAS URL.</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🌸 Log to Google Sheets';
+    }
+  }
+
+  addItemRow();
+</script>
+</body>
+</html>

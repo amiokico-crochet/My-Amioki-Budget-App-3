@@ -358,9 +358,22 @@
     <label class="upload-zone" for="csvUpload">
       <input type="file" id="csvUpload" accept=".csv" onchange="handleCSV(this)" />
       <div class="upload-icon">📄</div>
-      <div class="upload-title">Upload Square Items CSV</div>
-      <div class="upload-sub">Square Dashboard → Reports → Items → Export as CSV</div>
+      <div class="upload-title">Upload Square Items Report CSV</div>
+      <div class="upload-sub">Not sure which one? Follow these steps ↓</div>
     </label>
+    <div style="margin-top:10px; background: var(--gray-light); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px;">
+      <div style="font-size:0.75rem; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">How to export from Square</div>
+      <ol style="padding-left:1.1rem; display:flex; flex-direction:column; gap:5px;">
+        <li style="font-size:0.82rem; color:var(--text-mid);">Go to <strong>squareup.com</strong> → sign in → click <strong>Reports</strong> in the left sidebar</li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Click <strong>Sales Summary</strong> — NOT Transactions, NOT Payroll</li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Set your date range to the event day(s)</li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Scroll down to the <strong>Items</strong> section → click <strong>Export as CSV</strong></li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Upload that file here — it should have columns like <em>Item, Qty, Gross Sales</em></li>
+      </ol>
+      <div style="margin-top:10px; padding:8px 10px; background:var(--amber-light); border-radius:var(--radius-sm); font-size:0.78rem; font-weight:700; color:var(--amber);">
+        ⚠️ Don't upload the Transactions CSV or the full Sales Summary PDF — those won't match item names correctly.
+      </div>
+    </div>
     <div id="csvStatus"></div>
   </div>
 

@@ -358,20 +358,20 @@
     <label class="upload-zone" for="csvUpload">
       <input type="file" id="csvUpload" accept=".csv" onchange="handleCSV(this)" />
       <div class="upload-icon">📄</div>
-      <div class="upload-title">Upload Square Items Report CSV</div>
-      <div class="upload-sub">Not sure which one? Follow these steps ↓</div>
+      <div class="upload-title">Upload Square Items CSV</div>
+      <div class="upload-sub">This auto-fills gross, tax & contractor items — follow steps ↓</div>
     </label>
     <div style="margin-top:10px; background: var(--gray-light); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px;">
       <div style="font-size:0.75rem; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">How to export from Square</div>
       <ol style="padding-left:1.1rem; display:flex; flex-direction:column; gap:5px;">
         <li style="font-size:0.82rem; color:var(--text-mid);">Go to <strong>squareup.com</strong> → sign in → click <strong>Reports</strong> in the left sidebar</li>
-        <li style="font-size:0.82rem; color:var(--text-mid);">Click <strong>Sales Summary</strong> — NOT Transactions, NOT Payroll</li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Click <strong>Items</strong> report</li>
         <li style="font-size:0.82rem; color:var(--text-mid);">Set your date range to the event day(s)</li>
-        <li style="font-size:0.82rem; color:var(--text-mid);">Scroll down to the <strong>Items</strong> section → click <strong>Export as CSV</strong></li>
-        <li style="font-size:0.82rem; color:var(--text-mid);">Upload that file here — it should have columns like <em>Item, Qty, Gross Sales</em></li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Click <strong>Export</strong> → CSV</li>
+        <li style="font-size:0.82rem; color:var(--text-mid);">Upload that file here — it has one row per <em>sale</em> with Item, SKU, Gross Sales, and Tax columns, and this logger will sum gross + tax automatically and estimate Square fees</li>
       </ol>
       <div style="margin-top:10px; padding:8px 10px; background:var(--amber-light); border-radius:var(--radius-sm); font-size:0.78rem; font-weight:700; color:var(--amber);">
-        ⚠️ Don't upload the Transactions CSV or the full Sales Summary PDF — those won't match item names correctly.
+        ⚠️ Square fees are estimated at 2.6% + $0.15/transaction — double check against your actual statement and adjust the field if it's off.
       </div>
     </div>
     <div id="csvStatus"></div>
@@ -691,6 +691,26 @@
         const skuCol   = headers.find(function(h){ return /sku/i.test(h); }) || 'SKU';
         const qtyCol   = headers.find(function(h){ return /items.?sold/i.test(h)||/units.?sold/i.test(h)||/^qty$/i.test(h); }) || 'Items Sold';
         const grossCol = headers.find(function(h){ return /gross.?sales/i.test(h); }) || 'Gross Sales';
+        const taxCol   = headers.find(function(h){ return /^tax$/i.test(h); }) || 'Tax';
+        const txnCol   = headers.find(function(h){ return /transaction.?id/i.test(h); }) || 'Transaction ID';
+
+        // Detect per-transaction line-item export (has Transaction ID + Tax columns)
+        // vs an aggregated Items report (one row per item, no transaction-level tax)
+        const isLineItemExport = !!(headers.find(function(h){ return /transaction.?id/i.test(h); }));
+
+        let sumGross = 0, sumTax = 0;
+        const txnIds = new Set();
+
+        if (isLineItemExport) {
+          rows.forEach(row => {
+            const g = parseFloat((row[grossCol] || '0').replace(/[$,]/g, ''));
+            const t = parseFloat((row[taxCol]   || '0').replace(/[$,]/g, ''));
+            if (!isNaN(g)) sumGross += g;
+            if (!isNaN(t)) sumTax   += t;
+            const txnId = (row[txnCol] || '').trim();
+            if (txnId) txnIds.add(txnId);
+          });
+        }
 
         const SKU_TO_RATE = {
           'CA-OCHICK':    { ctr: 'Ashley', item: 'Chicken (Orange)' },
@@ -778,10 +798,22 @@
           }
         });
 
+        let autoFillNote = '';
+        if (isLineItemExport && sumGross > 0) {
+          // Estimate Square fees: 2.6% + $0.15 per transaction (Ami's standard in-person rate)
+          const estFees = (sumGross * 0.026) + (txnIds.size * 0.15);
+
+          document.getElementById('gross').value   = sumGross.toFixed(2);
+          document.getElementById('taxColl').value  = sumTax.toFixed(2);
+          document.getElementById('fees').value     = estFees.toFixed(2);
+
+          autoFillNote = `<div class="status-msg status-ok" style="margin-top:6px;">💰 Auto-filled from CSV — Gross: $${sumGross.toFixed(2)} · Tax: $${sumTax.toFixed(2)} · Est. fees: $${estFees.toFixed(2)} (2.6% + $0.15 × ${txnIds.size} txns)</div>`;
+        }
+
         const unmatchedNote = unmatched.length
           ? `<div class="status-msg status-info" style="margin-top:6px;">⚠️ Couldn't auto-match: <strong>${unmatched.join(', ')}</strong> — add manually below if contractor-made.</div>`
           : '';
-        statusEl.innerHTML = `<div class="status-msg status-ok">✓ Found ${matched} contractor item${matched !== 1 ? 's' : ''} — review below</div>${unmatchedNote}`;
+        statusEl.innerHTML = `<div class="status-msg status-ok">✓ Found ${matched} contractor item${matched !== 1 ? 's' : ''} — review below</div>${autoFillNote}${unmatchedNote}`;
         recalc();
       },
       error: function() {

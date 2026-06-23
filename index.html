@@ -455,7 +455,7 @@
       <hr class="divider" />
 
       <div class="pf-section">
-        <div class="pf-label-row">Profit First split — on true spendable</div>
+        <div class="pf-label-row">Profit First split — tithe first, then 6/74/10 of what's left</div>
         <div id="pfBars"></div>
       </div>
     </div>
@@ -521,8 +521,8 @@
     ]
   };
 
-  const PF = [
-    { label: 'Tithe',      pct: 0.10, color: '#7B5EA7' },
+  const TITHE_PCT = 0.10;
+  const PF_REMAINING = [
     { label: 'Personal',   pct: 0.06, color: '#E91E63' },
     { label: 'Operations', pct: 0.74, color: '#1D9E75' },
     { label: 'Innovation', pct: 0.10, color: '#B45309' },
@@ -656,16 +656,33 @@
         <div class="wf-val">${fmt(trueSpendable)}</div>
       </div>`;
 
-    document.getElementById('pfBars').innerHTML = PF.map(b => {
-      const amt = pfBase * b.pct;
+    // Tithe peels off FIRST, straight off true spendable — not a percentage of "what's left"
+    const tithe       = pfBase * TITHE_PCT;
+    const afterTithe  = pfBase - tithe;
+    // The remaining 90% still splits 6/74/10 proportionally among Personal/Operations/Innovation
+    const remainingPctSum = PF_REMAINING.reduce((s, b) => s + b.pct, 0); // 0.90
+
+    let pfHtml = `<div class="pf-bar">
+        <div class="pf-top">
+          <div><span class="pf-name">Tithe</span><span class="pf-pct">10% · first 🙏</span></div>
+          <div class="pf-amt">${fmt(tithe)}</div>
+        </div>
+        <div class="pf-track"><div class="pf-fill" style="width:100%; background:#7B5EA7;"></div></div>
+      </div>`;
+
+    pfHtml += PF_REMAINING.map(b => {
+      const amt = afterTithe * (b.pct / remainingPctSum);
+      const displayPct = (b.pct / remainingPctSum * 100).toFixed(1);
       return `<div class="pf-bar">
         <div class="pf-top">
-          <div><span class="pf-name">${b.label}</span><span class="pf-pct">${(b.pct * 100).toFixed(0)}%</span></div>
+          <div><span class="pf-name">${b.label}</span><span class="pf-pct">${displayPct}% of remainder</span></div>
           <div class="pf-amt">${fmt(amt)}</div>
         </div>
-        <div class="pf-track"><div class="pf-fill" style="width:${b.pct * 100}%; background:${b.color};"></div></div>
+        <div class="pf-track"><div class="pf-fill" style="width:${displayPct}%; background:${b.color};"></div></div>
       </div>`;
     }).join('');
+
+    document.getElementById('pfBars').innerHTML = pfHtml;
   }
 
   function handleCSV(input) {
